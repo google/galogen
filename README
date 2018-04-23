@@ -16,7 +16,15 @@ Options:
 
 Flags:
   --use_khrplatform - Use khrplatform.h header with ES APIs (off by default).
-  
+
 Example:
   ./galogen gl.xml --api gl --ver 4.5 --profile core --filename gl
+
+Disclaimer
+==========
+
+This is not an official Google product (experimental or otherwise), it is just
+code that happens to be owned by Google.
+
+
 
