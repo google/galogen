@@ -315,9 +315,6 @@ void populateEntity(CommandInfo::ParamInfo *info,
       } else if (strcmp(tag_name, "name") == 0) {
         info->name = elem->GetText();
         
-        // KLUDGE: "near" and "far" conflict with windows.h
-        if (info->name == "near") { info->name = "n"; }
-        else if (info->name == "far") { info->name = "f"; }
       } else {
         FAIL("Unknown tag \"%s\" on line %d\n",
              tag_name,
@@ -425,7 +422,6 @@ struct GenerationOptions {
   std::string api_name;
   ApiVersion api_version;
   std::string profile;
-  bool use_khrplatform;
   OutputGenerator *generator;
   std::string filename;
   std::unordered_set<std::string> extensions;
@@ -578,10 +574,7 @@ void generate(const GenerationOptions &options) {
         FAIL_IF(info == nullptr,
                 "Couldn't find type for api %s\n",
                 options.api_name.c_str());
-        if (type.isProcessed() ||
-            (!options.use_khrplatform &&
-               (info->name == "khrplatform" ||
-                info->requires == "khrplatform"))) {
+        if (type.isProcessed()) {
           return;
         }
         if (!info->requires.empty()) {
@@ -594,6 +587,7 @@ void generate(const GenerationOptions &options) {
   // KLUDGE: GLDEBUGPROC depends on these types but doesn't declare them as
   //         dependencies in any visible way. So force-output them at the very
   //         beginning.
+  //         See https://github.com/KhronosGroup/OpenGL-Registry/issues/160
   output_type(type_map["GLenum"]);
   output_type(type_map["GLuint"]);
   output_type(type_map["GLsizei"]);
@@ -683,7 +677,6 @@ GALOGEN_MAIN {
   options.api_name = "gl";
   options.api_version = galogen::internal::ApiVersion("4.0");
   options.profile = "core";
-  options.use_khrplatform = false;
   options.generator = nullptr;
   options.filename = "gl";
 
@@ -693,43 +686,39 @@ GALOGEN_MAIN {
     options.registry_file_name = argv[1];
     for (size_t i = 2; i < argc; ++i) {
       std::string arg = argv[i];
-      if (arg != "--use_khrplatform" && i + 1 >= argc) {
+      if (i + 1 >= argc) {
         FAIL("Inavlid options\n");
       }
-      if (arg == "--use_khrplatform") {
-        options.use_khrplatform = true;
-      } else {
-        std::string value = argv[++i];
-        if (arg == "--api") {
-          FAIL_IF(value != "gl" && value != "gles2" &&
-                  value != "gles1" && value != "glsc2",
-                  "Invalid API name %s\n", value.c_str());
-          options.api_name = value;
-        } else if (arg == "--ver") {
-            options.api_version = galogen::internal::ApiVersion(value.c_str());
-            FAIL_IF(!options.api_version.valid(),
-                    "Invalid version \"%s\"\n",
-                    value.c_str());
-        } else if (arg == "--profile") {
-          FAIL_IF(value != "core" && value != "compatibility",
-                  "Profile must be either \"core\" or \"compatibility\"\n");
-          options.profile = value;
-        } else if (arg == "--filename") {
-          options.filename = value;
-        } else if (arg == "--generator") {
-          auto generator_it = generators.find(value);
-          FAIL_IF(generator_it == generators.end(),
-                  "Invalid generator \"%s\" specified.\n", value.c_str());
-          options.generator = generator_it->second.get();
-        } else if (arg == "--exts") {
-          std::istringstream stream(value);
-          std::string extension_name;
-          while (std::getline(stream, extension_name, ',')) {
-            options.extensions.insert(extension_name);
-          }
-        } else {
-          FAIL("Unrecognized option: %s\n", arg.c_str());
+      std::string value = argv[++i];
+      if (arg == "--api") {
+        FAIL_IF(value != "gl" && value != "gles2" &&
+                value != "gles1" && value != "glsc2",
+                "Invalid API name %s\n", value.c_str());
+        options.api_name = value;
+      } else if (arg == "--ver") {
+          options.api_version = galogen::internal::ApiVersion(value.c_str());
+          FAIL_IF(!options.api_version.valid(),
+                  "Invalid version \"%s\"\n",
+                  value.c_str());
+      } else if (arg == "--profile") {
+        FAIL_IF(value != "core" && value != "compatibility",
+                "Profile must be either \"core\" or \"compatibility\"\n");
+        options.profile = value;
+      } else if (arg == "--filename") {
+        options.filename = value;
+      } else if (arg == "--generator") {
+        auto generator_it = generators.find(value);
+        FAIL_IF(generator_it == generators.end(),
+                "Invalid generator \"%s\" specified.\n", value.c_str());
+        options.generator = generator_it->second.get();
+      } else if (arg == "--exts") {
+        std::istringstream stream(value);
+        std::string extension_name;
+        while (std::getline(stream, extension_name, ',')) {
+          options.extensions.insert(extension_name);
         }
+      } else {
+        FAIL("Unrecognized option: %s\n", arg.c_str());
       }
     }
     if (options.generator == nullptr) {
@@ -852,7 +841,7 @@ Galogen generatescode to load OpenGL entry points  for the exact API version,
 profile and extensions that you specify.
 
 Usage:
-  galogen <path to GL registry XML file> [options | flags] 
+  galogen <path to GL registry XML file> [options] 
 
   --api - API name, such as gl or gles2. Default is gl.
 Options:
@@ -861,9 +850,6 @@ Options:
   --exts - A comma-separated list of extensions. Default is empty. 
   --filename - Name for generated files (<api>_<ver>_<profile> by default). 
   --generator - Which generator to use. Default is "c_noload". 
-
-Flags:
-  --use_khrplatform - Use khrplatform.h header with ES APIs (off by default).
   
 Example:
   ./galogen gl.xml --api gl --ver 4.5 --profile core --filename gl
