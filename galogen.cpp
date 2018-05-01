@@ -241,7 +241,9 @@ void populateEntity(TypeInfo *info, const tinyxml2::XMLElement *e) {
       if (strcmp(tag_name, "name") == 0) {
         info->name = elem->GetText();
         info->cdecl += " " + info->name;
-      } else if (strcmp(tag_name, "apientry") != 0) {
+      } else if (strcmp(tag_name, "apientry") == 0) {
+        info->cdecl += " GALOGEN_APIENTRY ";
+      } else {
         FAIL("Unexpected element \"%s\" in type definition on line %d\n",
               tag_name,
               e->GetLineNum());
