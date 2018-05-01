@@ -636,7 +636,6 @@ void generate(const GenerationOptions &options) {
  
   const std::unordered_set<std::string> &commands = entity_sets["command"];
   for (const auto &command_name : commands) {
-    const ApiEntity<CommandInfo> &command = command_map[command_name];
     auto command_it = command_map.find(command_name);
     FAIL_IF(command_it == command_map.end(),
             "Reference to undefined command %s\n",
