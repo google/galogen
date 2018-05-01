@@ -717,7 +717,7 @@ GALOGEN_MAIN {
         std::istringstream stream(value);
         std::string extension_name;
         while (std::getline(stream, extension_name, ',')) {
-          options.extensions.insert(extension_name);
+          options.extensions.insert("GL_" + extension_name);
         }
       } else {
         FAIL("Unrecognized option: %s\n", arg.c_str());
