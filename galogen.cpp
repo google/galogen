@@ -860,8 +860,8 @@ Example:
 const char *header_preamble = R"STR(
 #ifndef _GALOGEN_HEADER_
 #define _GALOGEN_HEADER_
-#if defined(__gl_h_) || defined(__GL_H__) || defined(__glext_h_) || defined(__GLEXT_H_) || defined(__gltypes_h_)
-#error Galogen-generated header included after gl.h, glext.h or gltypes.h
+#if defined(__gl_h_) || defined(__GL_H__) || defined(__glext_h_) || defined(__GLEXT_H_) || defined(__gltypes_h_) || defined(__gl_glcorearb_h_)
+#error Galogen-generated header included after a GL header.
 #endif
 #define __gl_h_
 #define __GL_H__
