@@ -1,10 +1,11 @@
-Galogen v. 1.0
-===============
+Galogen
+=======
+
 Galogen generates code to load OpenGL entry points  for the exact API version, 
 profile and extensions that you specify.
 
 Usage:
-  galogen <path to GL registry XML file> [options | flags] 
+  galogen <path to GL registry XML file> [options]
 
   --api - API name, such as gl or gles2. Default is gl.
 Options:
@@ -14,9 +15,6 @@ Options:
   --filename - Name for generated files (<api>_<ver>_<profile> by default). 
   --generator - Which generator to use. Default is "c_noload". 
 
-Flags:
-  --use_khrplatform - Use khrplatform.h header with ES APIs (off by default).
-
 Example:
   ./galogen gl.xml --api gl --ver 4.5 --profile core --filename gl
 
@@ -25,6 +23,4 @@ Disclaimer
 
 This is not an official Google product (experimental or otherwise), it is just
 code that happens to be owned by Google.
-
-
 
