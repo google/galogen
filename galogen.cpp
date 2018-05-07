@@ -147,7 +147,11 @@ public:
 
   // Invoked at the very start of output generation. This is where you should
   // do any setup, such as opening output files.
-  virtual void start(const std::string &name){}
+  virtual void start(const std::string &name,
+                     const std::string &api_name,
+                     const std::string &profile,
+                     int api_ver_maj,
+                     int api_ver_min){}
   
   virtual void processType(const TypeInfo &type){}
   virtual void processEnumGroup(const GroupInfo &group){}
@@ -565,11 +569,12 @@ void generate(const GenerationOptions &options) {
       fprintf(stderr,
               "WARNING: extension %s requested, but not supported by API %s\n",
               extension_name.c_str(), options.api_name.c_str());
-        
     }
   }
-  
-  options.generator->start(options.filename); 
+ 
+  options.generator->start(options.filename, options.api_name, options.profile,
+                           options.api_version.maj(),
+                           options.api_version.min());
   std::function<void(ApiEntity<TypeInfo>&)> output_type =
       [&](ApiEntity<TypeInfo> &type) {
         const TypeInfo *info = type.get(options.api_name.c_str());
@@ -585,7 +590,7 @@ void generate(const GenerationOptions &options) {
         options.generator->processType(*info);
         type.markProcessed();
       };
-      
+
   // KLUDGE: GLDEBUGPROC depends on these types but doesn't declare them as
   //         dependencies in any visible way. So force-output them at the very
   //         beginning.
@@ -594,7 +599,7 @@ void generate(const GenerationOptions &options) {
   output_type(type_map["GLuint"]);
   output_type(type_map["GLsizei"]);
   output_type(type_map["GLchar"]);
-  
+ 
   const std::unordered_set<std::string> &types = entity_sets["type"];
   for (const auto &type_name : types) {
     auto type_it = type_map.find(type_name);
@@ -619,7 +624,7 @@ void generate(const GenerationOptions &options) {
             options.api_name.c_str());
     options.generator->processEnumGroup(*info);
   }
-  
+
   const std::unordered_set<std::string> &enums = entity_sets["enum"];
   for (const auto &enum_name : enums) {
     auto enum_it = enum_map.find(enum_name);
@@ -739,20 +744,31 @@ class COutputGenerator : public OutputGenerator {
 public:
   // Invoked at the very start of output generation. This is where you should
   // do any setup, such as opening output files.
-  void start(const std::string &name) override {
+  void start(const std::string &name,
+             const std::string &api_name,
+             const std::string &api_profile,
+             int api_ver_maj,
+             int api_ver_min) override {
     output_h_ = fopen((name + ".h").c_str(), "w");
     output_c_ = fopen((name + ".c").c_str(), "w");
     FAIL_IF(output_h_ == nullptr || output_c_ == nullptr,
             "Failed to create output files\n");
     fprintf(output_h_, "%s\n", header_preamble);
+    fprintf(output_h_,
+            "#define GALOGEN_API_NAME \"%s\"\n"
+            "#define GALOGEN_API_PROFILE \"%s\"\n"
+            "#define GALOGEN_API_VER_MAJ %d\n"
+            "#define GALOGEN_API_VER_MIN %d\n",
+            api_name.c_str(), api_profile.c_str(),
+            api_ver_maj, api_ver_min);
     fprintf(output_c_, "#include \"%s.h\"", name.c_str());
     fprintf(output_c_, "%s\n", get_proc_address_code);
   }
-  
+
   void processType(const TypeInfo &type) override {
     fprintf(output_h_, "%s\n", type.cdecl.c_str());
   }
-  
+
   void processEnumerant(const EnumerantInfo &enumerant) override {
     fprintf(output_h_, "#define %s %s%s\n",
             enumerant.name.c_str(),
@@ -765,7 +781,7 @@ public:
              enumerant.suffix.c_str());
     }
   }
-  
+
   void processCommand(const CommandInfo &command) override {
     // Build parameter list strings.
     std::string parameter_list_sig, parameter_list_call;
@@ -777,7 +793,7 @@ public:
       parameter_list_sig += param.ctype + " " + param.name;
       parameter_list_call += param.name;
     }
-    
+
     // Output function pointer declaration to header.
     fprintf(output_h_, // Function pointer type.
             "\ntypedef %s (GALOGEN_APIENTRY *PFN_%s)(%s);\n",
@@ -862,11 +878,14 @@ const char *header_preamble = R"STR(
 #if defined(__gl_h_) || defined(__GL_H__) || defined(__glext_h_) || defined(__GLEXT_H_) || defined(__gltypes_h_) || defined(__gl_glcorearb_h_)
 #error Galogen-generated header included after a GL header.
 #endif
-#define __gl_h_
-#define __GL_H__
-#define __glext_h_
-#define __GLEXT_H_
-#define __gltypes_h_
+#define __gl_h_ 1
+#define __gl32_h_ 1
+#define __gl31_h_ 1
+#define __GL_H__ 1
+#define __glext_h_ 1
+#define __GLEXT_H_ 1
+#define __gltypes_h_ 1
+#define __gl_glcorearb_h_ 1
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -902,12 +921,31 @@ void* GalogenGetProcAddress(const char *name) {
 
 static void* GalogenGetProcAddress (const char *name)
 {
-	static void* lib = NULL;
-	if (NULL == lib)
-		lib = dlopen(
+  static void* lib = NULL;
+  if (NULL == lib)
+    lib = dlopen(
       "/System/Library/Frameworks/OpenGL.framework/Versions/Current/OpenGL",
       RTLD_LAZY);
-	return lib ? dlsym(lib, name) : NULL;
+  return lib ? dlsym(lib, name) : NULL;
+}
+#elif defined(__ANDROID__)
+#include <dlfcn.h>
+#include <assert.h>
+#if GALOGEN_API_VER_MAJ == 3
+#define GALOGEN_GLES_LIB "libGLESv3.so"
+#elif GALOGEN_API_VER_MAJ == 2
+#define GALOGEN_GLES_LIB "libGLESv2.so"
+#else
+#define GALOGEN_GLES_LIB "libGLESv1_CM.so"
+#endif
+static void* GalogenGetProcAddress(const char *name)
+{
+  static void* lib = NULL;
+  if (NULL == lib) {
+    lib = dlopen(GALOGEN_GLES_LIB, RTLD_LAZY);
+    assert(lib);
+  }
+  return lib ? dlsym(lib, name) : NULL;
 }
 
 #else
