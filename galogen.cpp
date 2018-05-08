@@ -901,6 +901,7 @@ extern "C" {
 
 const char *get_proc_address_code = R"STR(
 
+#include <assert.h>
 #if defined(_WIN32)
 void* GalogenGetProcAddress(const char *name) {
   static HMODULE opengl32module = NULL;
@@ -938,7 +939,6 @@ static void* GalogenGetProcAddress (const char *name)
 }
 #elif defined(__ANDROID__)
 #include <dlfcn.h>
-#include <assert.h>
 #if GALOGEN_API_VER_MAJ == 3
 #define GALOGEN_GLES_LIB "libGLESv3.so"
 #elif GALOGEN_API_VER_MAJ == 2
