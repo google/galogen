@@ -246,7 +246,7 @@ void populateEntity(TypeInfo *info, const tinyxml2::XMLElement *e) {
         info->name = elem->GetText();
         info->cdecl += " " + info->name;
       } else if (strcmp(tag_name, "apientry") == 0) {
-        info->cdecl += " GALOGEN_APIENTRY ";
+        info->cdecl += " GL_APIENTRY ";
       } else {
         FAIL("Unexpected element \"%s\" in type definition on line %d\n",
               tag_name,
@@ -796,7 +796,7 @@ public:
 
     // Output function pointer declaration to header.
     fprintf(output_h_, // Function pointer type.
-            "\ntypedef %s (GALOGEN_APIENTRY *PFN_%s)(%s);\n",
+            "\ntypedef %s (GL_APIENTRY *PFN_%s)(%s);\n",
             command.return_ctype.c_str(),
             command.name.c_str(),
             parameter_list_sig.c_str());
@@ -817,7 +817,7 @@ public:
     }
     // Output loader function to .c file.
     fprintf(output_c_, // Signature.
-            "static %s GALOGEN_APIENTRY _impl_%s (%s) {\n",
+            "static %s GL_APIENTRY _impl_%s (%s) {\n",
             command.return_ctype.c_str(),
             command.name.c_str(),
             parameter_list_sig.c_str());
@@ -892,9 +892,9 @@ const char *header_preamble = R"STR(
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#define GALOGEN_APIENTRY APIENTRY
+#define GL_APIENTRY APIENTRY
 #else
-#define GALOGEN_APIENTRY
+#define GL_APIENTRY
 #endif
 
 #if defined(__cplusplus)
