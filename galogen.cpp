@@ -875,9 +875,10 @@ Example:
 const char *header_preamble = R"STR(
 #ifndef _GALOGEN_HEADER_
 #define _GALOGEN_HEADER_
-#if defined(__gl_h_) || defined(__GL_H__) || defined(__glext_h_) || defined(__GLEXT_H_) || defined(__gltypes_h_) || defined(__gl_glcorearb_h_)
+#if defined(__gl_h_) || defined(__GL_H__) || defined(__glext_h_) || defined(__GLEXT_H_) || defined(__gltypes_h_) || defined(__glcorearb_h_) || defined(__gl_glcorearb_h)
 #error Galogen-generated header included after a GL header.
 #endif
+
 #define __gl_h_ 1
 #define __gl32_h_ 1
 #define __gl31_h_ 1
@@ -885,7 +886,9 @@ const char *header_preamble = R"STR(
 #define __glext_h_ 1
 #define __GLEXT_H_ 1
 #define __gltypes_h_ 1
+#define __glcorearb_h_ 1
 #define __gl_glcorearb_h_ 1
+
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
