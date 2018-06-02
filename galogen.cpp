@@ -854,7 +854,7 @@ private:
 const char *help_message = R"STR(
 Galogen v. 1.0
 ===============
-Galogen generatescode to load OpenGL entry points  for the exact API version, 
+Galogen generates code to load OpenGL entry points  for the exact API version, 
 profile and extensions that you specify.
 
 Usage:
