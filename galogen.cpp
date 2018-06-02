@@ -42,7 +42,7 @@ struct TypeInfo {
   std::string name;
   
   // Legal C code for type declaration.
-  std::string cdecl;
+  std::string type_cdecl;
   
   // Name of another type that this type requires.
   std::string requires;
@@ -239,14 +239,14 @@ void populateEntity(TypeInfo *info, const tinyxml2::XMLElement *e) {
   }
   FOR_EACH_CHILD(e, child) {
     if (const tinyxml2::XMLText *text = child->ToText()) {
-      info->cdecl += text->Value();
+      info->type_cdecl += text->Value();
     } else if (const tinyxml2::XMLElement *elem = child->ToElement()) {
       const char *tag_name = elem->Value();
       if (strcmp(tag_name, "name") == 0) {
         info->name = elem->GetText();
-        info->cdecl += " " + info->name;
+        info->type_cdecl += " " + info->name;
       } else if (strcmp(tag_name, "apientry") == 0) {
-        info->cdecl += " GL_APIENTRY ";
+        info->type_cdecl += " GL_APIENTRY ";
       } else {
         FAIL("Unexpected element \"%s\" in type definition on line %d\n",
               tag_name,
@@ -766,7 +766,7 @@ public:
   }
 
   void processType(const TypeInfo &type) override {
-    fprintf(output_h_, "%s\n", type.cdecl.c_str());
+    fprintf(output_h_, "%s\n", type.type_cdecl.c_str());
   }
 
   void processEnumerant(const EnumerantInfo &enumerant) override {
