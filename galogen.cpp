@@ -682,7 +682,7 @@ GALOGEN_MAIN {
   galogen::internal::GenerationOptions options;
   options.api_name = "gl";
   options.api_version = galogen::internal::ApiVersion("4.0");
-  options.profile = "core";
+  options.profile = "compatibility";
   options.generator = nullptr;
   options.filename = "gl";
 
