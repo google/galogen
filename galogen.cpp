@@ -690,6 +690,7 @@ GALOGEN_MAIN {
     printf("%s\n", galogen::internal::help_message);
   } else {
     options.registry_file_name = argv[1];
+    bool api_ver_specified = false;
     for (size_t i = 2; i < argc; ++i) {
       std::string arg = argv[i];
       if (i + 1 >= argc) {
@@ -702,6 +703,7 @@ GALOGEN_MAIN {
                 "Invalid API name %s\n", value.c_str());
         options.api_name = value;
       } else if (arg == "--ver") {
+          api_ver_specified = true;
           options.api_version = galogen::internal::ApiVersion(value.c_str());
           FAIL_IF(!options.api_version.valid(),
                   "Invalid version \"%s\"\n",
@@ -726,6 +728,17 @@ GALOGEN_MAIN {
       } else {
         FAIL("Unrecognized option: %s\n", arg.c_str());
       }
+    }
+    const std::unordered_map<std::string, std::string> default_api_versions {
+      {"gl", "4.0"},
+      {"gles1", "1.0"},
+      {"gles2", "2.0"},
+      {"glsc2", "2.0"}
+    };
+    if (!api_ver_specified) {
+      options.api_version =
+        galogen::internal::ApiVersion(
+          default_api_versions.find(options.api_name)->second.c_str());
     }
     if (options.generator == nullptr) {
       options.generator = generators["c_noload"].get();
