@@ -481,7 +481,7 @@ void processOperations(
   }
 }
 
-void generate(const GenerationOptions &options) {
+void generate(GenerationOptions &options) {
   // Load the registry file.
   tinyxml2::XMLDocument spec;
   FAIL_IF(spec.LoadFile(options.registry_file_name.c_str()) !=
@@ -565,13 +565,19 @@ void generate(const GenerationOptions &options) {
     bool extension_requested = options.extensions.count(extension_name) >= 1;
     if (extension_requested && extension_supported) {
       processOperations(extension, options, command_map, entity_sets);
+      options.extensions.erase(extension_name);
     } else if (extension_requested) {
       fprintf(stderr,
               "WARNING: extension %s requested, but not supported by API %s\n",
               extension_name.c_str(), options.api_name.c_str());
     }
   }
- 
+  std::ostringstream remaining_extensions;
+  std::copy(options.extensions.begin(), options.extensions.end(),
+            std::ostream_iterator<std::string>(remaining_extensions, ", "));
+  FAIL_IF(!remaining_extensions.str().empty(),
+          "Invalid extensions specified: %s\n",
+          remaining_extensions.str().c_str());
   options.generator->start(options.filename, options.api_name, options.profile,
                            options.api_version.maj(),
                            options.api_version.min());
