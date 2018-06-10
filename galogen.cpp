@@ -933,7 +933,7 @@ void* GalogenGetProcAddress(const char *name) {
     if (!opengl32module) {
       opengl32module = LoadLibraryA("opengl32.dll");
     }
-    wgl_get_proc_address = (PROC)GetProcAddress(opengl32module, "wglGetProcAddress");
+    wgl_get_proc_address = (PROC(WINAPI*)(LPCSTR))GetProcAddress(opengl32module, "wglGetProcAddress");
     assert(wgl_get_proc_address);
   }
   void *ptr = (void *)wgl_get_proc_address(name);
