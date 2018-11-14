@@ -335,12 +335,12 @@ void populateEntity(CommandInfo *info,
   const tinyxml2::XMLElement *prototype_elem = e->FirstChildElement("proto");
   FOR_EACH_CHILD(prototype_elem, child) {
     if (const tinyxml2::XMLText *text = child->ToText()) {
-      info->return_ctype += text->Value();
+      info->return_ctype += std::string(" ") + text->Value();
       info->prototype += text->Value();
     } else if (const tinyxml2::XMLElement *elem = child->ToElement()) {
       const char *tag_name = elem->Value();
       if (strcmp(tag_name, "ptype") == 0) {
-        info->return_ctype += elem->GetText();
+        info->return_ctype += std::string(" ") + elem->GetText();
         info->referenced_api_type = elem->GetText();
         info->prototype += elem->GetText();
       } else if (strcmp(tag_name, "name") == 0) {
@@ -352,6 +352,16 @@ void populateEntity(CommandInfo *info,
              elem->GetLineNum());
       }
     }
+
+    // Clean up return ctype.
+    std::string &return_ctype = info->return_ctype;
+    auto l = [](int c) { return !isspace(c); };
+    return_ctype.erase(return_ctype.begin(), std::find_if(return_ctype.begin(),
+                                                          return_ctype.end(),
+                                                          l ));
+    return_ctype.erase(std::find_if(return_ctype.rbegin(),
+                                    return_ctype.rend(),
+                                    l).base(), return_ctype.end());
   }
   FOR_EACH_CHILD_ELEM_NAMED("param", e, param) {
     CommandInfo::ParamInfo param_info;
