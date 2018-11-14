@@ -801,7 +801,7 @@ public:
             "#define GALOGEN_API_VER_MIN %d\n",
             api_name.c_str(), api_profile.c_str(),
             api_ver_maj, api_ver_min);
-    fprintf(output_c_, "#include \"%s.h\"", name.c_str());
+    fprintf(output_c_, "#include \"%s.h\"\n", name.c_str());
     if(!null_driver_) {
       fprintf(output_c_, "%s\n", source_preamble);
     }
@@ -865,6 +865,10 @@ public:
             command.name.c_str(),
             parameter_list_sig.c_str());
     if (null_driver_) {
+      if (command.return_ctype != "void") {
+        fprintf(output_c_,
+                "  return (%s)0;\n", command.return_ctype.c_str());
+      }
       fprintf(output_c_, "}\n");
     } else {
       fprintf(output_c_, // Implementation.
@@ -874,7 +878,7 @@ public:
               command.name.c_str());
       fprintf(output_c_,
               "%s _glptr_%s(%s);\n}\n",
-              command.return_ctype != "void " ? "return" : "",
+              command.return_ctype != "void" ? "return" : "",
               command.name.c_str(),
               parameter_list_call.c_str());
     }
