@@ -696,6 +696,14 @@ GALOGEN_MAIN {
     printf("%s\n", galogen::internal::help_message);
   } else {
     options.registry_file_name = argv[1];
+    if (options.registry_file_name[0] == '-' &&
+        options.registry_file_name[1] == '-') {
+      fprintf(stderr, "WARNING: First argument \"%s\" looks suspicious."
+                      " Did you forget to specify a path to the XML registry"
+                      " file?\n",
+              argv[1]);
+    }
+
     bool api_ver_specified = false;
     for (size_t i = 2; i < argc; ++i) {
       std::string arg = argv[i];
