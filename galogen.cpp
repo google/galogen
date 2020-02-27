@@ -45,7 +45,7 @@ struct TypeInfo {
   std::string type_cdecl;
   
   // Name of another type that this type requires.
-  std::string requires;
+  std::string demands;
   
   // API name for which this type definition applies.
   std::string api;
@@ -232,7 +232,7 @@ void populateEntity(TypeInfo *info, const tinyxml2::XMLElement *e) {
     info->name = name_attrib;
   }
   if (const char *requires_attrib = e->Attribute("requires")) {
-    info->requires = requires_attrib;
+    info->demands = requires_attrib;
   }
   if (const char *api_attrib = e->Attribute("api")) {
     info->api = api_attrib;
@@ -600,8 +600,8 @@ void generate(GenerationOptions &options) {
         if (type.isProcessed()) {
           return;
         }
-        if (!info->requires.empty()) {
-          output_type(type_map[info->requires]);
+        if (!info->demands.empty()) {
+          output_type(type_map[info->demands]);
         }
         options.generator->processType(*info);
         type.markProcessed();
